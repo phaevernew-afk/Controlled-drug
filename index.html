@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>管制藥年度報表|藥劑科</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💊</text></svg>">
+<style>
+  :root{
+    --navy:#1e3a5f; --blue:#2b6cb0; --teal:#1a9e8f; --red:#e53e3e; --amber:#b7791f; --green:#2f855a;
+    --bg:#f4f8fc; --card:#fff; --line:#e2e8f0; --text:#1a202c; --muted:#718096; --soft:#edf2f7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.55}
+  .wrap{max-width:1180px;margin:0 auto;padding:16px 16px 48px}
+  header{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;border-radius:14px;
+    padding:26px 20px;text-align:center;box-shadow:0 4px 14px rgba(30,58,95,.25)}
+  header h1{margin:0 0 6px;font-size:1.6rem}
+  header p{margin:0;opacity:.9;font-size:.95rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:16px;
+    box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .card h2{margin:0 0 4px;font-size:1.1rem;color:var(--navy);display:flex;align-items:center;gap:8px}
+  .step{background:var(--blue);color:#fff;width:24px;height:24px;border-radius:50%;font-size:.85rem;
+    display:inline-flex;align-items:center;justify-content:center;flex:none}
+  .hint{color:var(--muted);font-size:.88rem;margin:0 0 12px}
+  .privacy{background:#ebf8f6;border-left:4px solid var(--teal);border-radius:8px;padding:10px 14px;font-size:.9rem;margin-top:16px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+  .tabs{display:flex;gap:6px}
+  .tab{font:inherit;border:1px solid var(--line);background:var(--soft);color:var(--navy);padding:7px 18px;border-radius:999px;cursor:pointer;font-weight:600}
+  .tab.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  .pill{display:inline-block;background:#ebf8f6;color:#13756a;border-radius:999px;padding:2px 12px;font-size:.85rem;font-weight:600}
+  #drop{border:2px dashed #a0b4cc;border-radius:12px;padding:22px 12px;text-align:center;cursor:pointer;background:#f8fbff;transition:.15s}
+  #drop.over{border-color:var(--blue);background:#e8f1fb}
+  #drop b{color:var(--blue)}
+  .slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:14px}
+  .slot{border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:.86rem;background:#fff}
+  .slot .t{font-weight:600;color:var(--navy)} .slot .f{color:var(--muted);word-break:break-all;min-height:1.3em}
+  .slot.ok{border-color:#9ae6b4;background:#f0fff4} .slot.ok .f{color:var(--green)}
+  .slot.saved{border-color:#bee3f8;background:#f0f8ff} .slot.saved .f{color:var(--blue)}
+  .row{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+  select{font:inherit;padding:6px 10px;border:1px solid #cbd5e0;border-radius:8px;background:#fff}
+  label.chk{display:flex;gap:6px;align-items:center;font-size:.92rem;cursor:pointer}
+  button.primary{font:inherit;font-weight:600;background:var(--blue);color:#fff;border:0;border-radius:10px;padding:10px 26px;cursor:pointer;font-size:1.02rem}
+  button.primary:hover:not(:disabled){background:#245a94} button.primary:disabled{background:#a0aec0;cursor:not-allowed}
+  button.ghost{font:inherit;background:#fff;border:1px solid #cbd5e0;color:var(--navy);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.9rem}
+  button.ghost:hover{background:var(--soft)} button.danger{color:var(--red);border-color:#feb2b2}
+  a.dl{display:inline-block;text-decoration:none;background:var(--teal);color:#fff;border-radius:8px;padding:7px 16px;font-weight:600;font-size:.9rem;cursor:pointer;border:0;font-family:inherit}
+  a.dl:hover{background:#158075}
+  .banner{border-radius:10px;padding:12px 16px;font-weight:600;margin-top:16px}
+  .banner.ok{background:#f0fff4;color:var(--green);border:1px solid #9ae6b4}
+  .banner.warn{background:#fffaf0;color:var(--amber);border:1px solid #f6d99b}
+  .tablewrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.86rem}
+  th{background:var(--soft);text-align:left;padding:7px 8px;white-space:nowrap}
+  td{padding:7px 8px;border-top:1px solid var(--line);vertical-align:top}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  /* 年度矩陣 */
+  table.matrix{min-width:960px;font-size:.8rem}
+  table.matrix th,table.matrix td{padding:6px 5px}
+  table.matrix th.m{text-align:center;min-width:44px} table.matrix th.latest{background:#bee3f8;color:var(--navy)}
+  table.matrix td.drug{position:sticky;left:0;background:#fff;min-width:150px;max-width:170px;cursor:pointer;border-right:1px solid var(--line)}
+  table.matrix th.drug{position:sticky;left:0;z-index:1}
+  table.matrix tr.sel td{background:#ebf4ff} table.matrix tr.sel td.drug{background:#ebf4ff;box-shadow:inset 3px 0 0 var(--blue)}
+  table.matrix tr:hover td{background:#f7fafc}
+  td.mc{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.mc.empty{color:#cbd5e0;text-align:center}
+  td.mc .rec{display:block;color:var(--green);font-size:.74rem;font-weight:600}
+  td.drug .nm{font-weight:600;color:var(--navy)} td.drug .cd{color:var(--muted);font-size:.76rem}
+  td.tot{font-weight:700;background:#fafcff}
+  /* 紙本格式明細 */
+  #detail{margin-top:18px;border-top:2px dashed var(--line);padding-top:14px}
+  .dhead{text-align:center;line-height:1.7} .dhead .t1{color:var(--muted)} .dhead .t2{font-size:1.15rem;font-weight:700;color:var(--navy)}
+  .dhead .t3{font-size:.9rem}
+  table.form{max-width:900px;margin:10px auto 0;border:1px solid #a0aec0}
+  table.form th,table.form td{border:1px solid #cbd5e0;padding:5px 8px;text-align:center}
+  table.form th{background:var(--soft)} table.form td.n{text-align:right}
+  table.form tr.tot td{font-weight:700;background:#f7fafc}
+  table.form tr.act td{background:#f0fff4}
+  .s-ok{color:var(--green);font-weight:700}.s-warn{color:var(--amber);font-weight:700}.s-bad{color:var(--red);font-weight:700}.s-skip{color:var(--muted)}
+  .log{font-size:.82rem;color:#4a5568;margin-top:3px}
+  .log .tag{display:inline-block;border-radius:4px;padding:0 6px;margin-right:6px;font-size:.75rem;color:#fff;background:#718096}
+  .log .tag.注意,.log .tag.略過{background:var(--amber)}.log .tag.錯誤{background:var(--red)}.log .tag.資訊{background:var(--blue)}
+  .empty-state{text-align:center;color:var(--muted);padding:26px 10px}
+  details{margin-top:16px;font-size:.9rem} summary{cursor:pointer;color:var(--blue);font-weight:600}
+  code{background:var(--soft);border-radius:4px;padding:1px 5px}
+  #busy{display:none;margin-top:10px;color:var(--blue);font-weight:600}
+  footer{text-align:center;color:var(--muted);font-size:.8rem;margin-top:28px}
+  @media print{
+    body{background:#fff} body *{visibility:hidden}
+    #detail,#detail *{visibility:visible} #detail{position:absolute;left:0;top:0;width:100%;border:0}
+    .noprint{display:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>💊 管制藥年度報表</h1>
+    <p>整年度一覽 ・ 每月匯入簿冊,自動累加到年度報表</p>
+  </header>
+  <div class="privacy">🔒 所有檔案<b>只在你的瀏覽器內處理,不會上傳到任何伺服器</b>。年度報表會儲存在<b>這台電腦的這個瀏覽器</b>,下次開啟自動載入;換電腦或清除瀏覽資料會消失,因此每次更新後請順手<b>下載備份</b>。</div>
+
+  <!-- 年度總覽 -->
+  <section class="card" id="yearCard">
+    <div class="topbar">
+      <h2 id="yearTitle">📅 年度報表總覽</h2>
+      <div class="row">
+        <div class="tabs" id="tabs"></div>
+        <span class="pill" id="latestPill" style="display:none"></span>
+        <a class="dl" id="dlYear" style="display:none">⬇ 下載年度報表</a>
+      </div>
+    </div>
+    <div id="yearBox"><div class="empty-state">尚未載入年度報表。<br>請在下方「每月匯入」放入三級、四級的<b>年度報表(.xlsx)</b>。</div></div>
+    <div id="detail" style="display:none"></div>
+  </section>
+
+  <!-- 每月匯入 -->
+  <section class="card noprint">
+    <h2><span class="step">1</span>放入檔案</h2>
+    <p class="hint">每月只要放<b>兩個簿冊(.xls)</b>。年度報表(.xlsx)<b>只有第一次或新年度才需要放</b>,之後會自動使用已儲存的版本(若放入新的年度報表,會取代已儲存的)。</p>
+    <div id="drop" tabindex="0">
+      <div>📂 將檔案拖曳到這裡,或 <b>點擊選擇檔案</b></div>
+      <input id="file" type="file" multiple accept=".xls,.xlsx" hidden>
+    </div>
+    <div class="slots" id="slots"></div>
+    <div id="msg" class="hint" style="margin-top:10px"></div>
+  </section>
+
+  <section class="card noprint">
+    <h2><span class="step">2</span>確認月份並匯入</h2>
+    <p class="hint" id="monthHint">放入簿冊後,會依簿冊最新日期自動選擇月份(最新日期不是月底 → 填上個月)。</p>
+    <div class="row">
+      <label>月份:<select id="month"></select></label>
+      <label class="chk"><input type="checkbox" id="overwrite"> 已有數字時也覆蓋</label>
+      <button class="primary" id="run" disabled>匯入並更新年度報表</button>
+    </div>
+    <div id="busy">處理中,請稍候…</div>
+  </section>
+
+  <div id="result" class="noprint"></div>
+
+  <details class="card noprint">
+    <summary>說明與注意事項</summary>
+    <ul>
+      <li><b>調劑總量</b>:該月所有「支出數量」加總,填在該月第一列。</li>
+      <li><b>進貨</b>:購入日期(如 <code>1151012</code>)、批號、購入量依序填入該月各列;預留列不夠會自動插列並修正公式。</li>
+      <li>該月無調劑、無進貨的藥品留白。已有數字的格子預設不覆蓋。</li>
+      <li><b>期末結存核對</b>:「報表推算的結存」須等於「簿冊當月最後一筆結存」;不一致會標 ⚠,請回頭檢查。</li>
+      <li>⚠ 常見原因:簿冊日期打錯年份、批號空白、「調劑」被標成「購買」、先前月份在報表上手動調整過。</li>
+      <li>年度總覽中的合計與結存,是依各月資料由本頁重新推算,不依賴 Excel 內的合計公式。下載的檔案用 Excel 開啟會自動重算。</li>
+      <li>新增藥品或配對失敗時,修改本檔 <code>index.html</code> 最上方 <code>CONFIG</code> 的 <code>overrides</code> / <code>skip</code>。</li>
+      <li>換新年度:把新年度的空白報表(.xlsx)放進來即可取代。</li>
+    </ul>
+    <p><button class="ghost danger" id="wipe">清除此瀏覽器已儲存的年度報表</button></p>
+  </details>
+  <footer class="noprint">藥劑科表單快捷工作台 ・ 管制藥年度報表</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script>
+/* ═════════ 設定(需要時只改這裡) ═════════
+   overrides:報表分頁名稱 → 簿冊分頁名稱(自動配對失敗時才需要)
+   skip:     不處理的報表分頁(例如已銷毀、停用的藥品)            */
+const CONFIG = {
+  overrides: { A044332: "Fentanyl 2ml" },
+  skip: ["A019247"],
+};
+
+/* ═════════ 核心邏輯 ═════════ */
+const MONTH_NAMES = ["", "一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
+const DATE_RE = /^(\d{3})\.(\d{2})\.(\d{2})$/;
+
+function toNum(v) {
+  if (v === "" || v == null) return null;
+  const f = Number(v);
+  return Number.isFinite(f) ? f : null;
+}
+function cellText(v) {
+  if (v == null) return "";
+  if (typeof v === "object") {
+    if (v.richText) return v.richText.map(t => t.text).join("");
+    if (v.result !== undefined) return String(v.result);
+    if (v.text !== undefined) return String(v.text);
+  }
+  return String(v);
+}
+function cellNum(v) {
+  if (typeof v === "number") return v;
+  if (v && typeof v === "object" && typeof v.result === "number") return v.result;
+  return null;
+}
+const isFormulaVal = v => v && typeof v === "object" && ("formula" in v || "sharedFormula" in v);
+
+/* 簿冊(.xls)→ { 分頁名: {lic, rows[]} } ;XLSX 為 SheetJS */
+function parseLedger(xwb) {
+  const out = {};
+  for (const name of xwb.SheetNames) {
+    const rows = XLSX.utils.sheet_to_json(xwb.Sheets[name], { header: 1, defval: "", raw: true });
+    if (rows.length < 5) continue;
+    const m = /(\d{6})/.exec(String((rows[1] || [])[10] ?? ""));
+    if (!m) continue;                                   // 不是簿冊格式(例如「數量」分頁)
+    const list = [];
+    for (let r = 4; r < rows.length; r++) {
+      const row = rows[r];
+      const d = DATE_RE.exec(String(row[0]).trim());
+      if (!d) continue;
+      let batch = row[3];
+      if (typeof batch === "string") batch = batch.trim();
+      if (batch === "") batch = null;
+      list.push({
+        year: +d[1], month: +d[2], day: +d[3], date: d[0],
+        reason: String(row[1]).trim(),
+        inn: toNum(row[2]), out: toNum(row[5]), batch, bal: toNum(row[7]),
+      });
+    }
+    out[name] = { lic: m[1], rows: list };
+  }
+  return out;
+}
+
+function summarize(rows, year, month) {
+  let disp = 0, lastBal = null;
+  const receipts = [], other = [];
+  for (const x of rows) {
+    if (x.year !== year || x.month !== month) continue;
+    if (x.bal != null) lastBal = x.bal;
+    if (x.out) { disp += x.out; if (x.reason !== "調劑" && x.reason !== "") other.push(x); }
+    if (x.inn) receipts.push(x);
+  }
+  return { disp, receipts, other, lastBal };
+}
+
+function autoMonth(ledgers, year) {
+  let latest = null;
+  for (const L of ledgers) for (const d of Object.values(L)) for (const x of d.rows) {
+    if (x.year !== year) continue;                      // 忽略其他年度/打錯年份
+    const k = x.month * 100 + x.day;
+    if (latest === null || k > latest) latest = k;
+  }
+  if (latest === null) return null;
+  const m = Math.floor(latest / 100), d = latest % 100;
+  const lastDay = new Date(year + 1911, m, 0).getDate();
+  return d === lastDay ? m : (m > 1 ? m - 1 : 12);
+}
+
+function findRows(ws) {
+  const months = {}; let total = null;
+  for (let r = 9; r <= ws.rowCount; r++) {
+    const a = cellText(ws.getCell(r, 1).value).trim();
+    if (!a) continue;
+    if (a === "總年度") { total = r; break; }
+    const mi = MONTH_NAMES.indexOf(a);
+    if (mi > 0) (months[mi] = months[mi] || []).push(r);
+  }
+  return { months, total };
+}
+
+const shiftRefs = (f, at, n = 1) =>
+  f.replace(/([A-Z]+)(\d+)/g, (_, c, r) => c + (+r >= at ? +r + n : r));
+
+/* 在 afterRow 後插入同月份的一列,並修正其後的公式 */
+function insertMonthRow(ws, afterRow, label) {
+  const at = afterRow + 1, last = ws.rowCount;
+  for (let r = last; r >= at; r--) {                    // 往下搬一列
+    for (let c = 1; c <= 7; c++) {
+      const s = ws.getCell(r, c), d = ws.getCell(r + 1, c);
+      let v = s.value;
+      if (v && typeof v === "object" && v.formula) v = { formula: shiftRefs(v.formula, at) };
+      else if (v && typeof v === "object" && v.sharedFormula)                          // 共用公式 → 改成一般公式
+        v = c === 7 ? { formula: `G${r}+E${r + 1}-F${r + 1}` } : { result: v.result };
+      d.value = v;
+      d.style = structuredClone(s.style);
+    }
+    ws.getRow(r + 1).height = ws.getRow(r).height;
+  }
+  for (let c = 1; c <= 7; c++) {                        // 新列:複製上一列格式、清空內容
+    const d = ws.getCell(at, c);
+    d.style = structuredClone(ws.getCell(afterRow, c).style);
+    d.value = null;
+  }
+  ws.getRow(at).height = ws.getRow(afterRow).height;
+  ws.getCell(at, 1).value = label;
+  // 資料列的結存公式一律重建為一般公式(同時消除共用公式)
+  const { total } = findRows(ws);
+  for (let r = 9; r < total; r++) {
+    const g = ws.getCell(r, 7);
+    if (r === at || isFormulaVal(g.value)) g.value = { formula: `G${r - 1}+E${r}-F${r}` };
+  }
+  return at;
+}
+
+function reportBalance(ws, uptoRow) {
+  let bal = cellNum(ws.getCell(8, 7).value) ?? 0;
+  for (let r = 9; r <= uptoRow; r++)
+    bal += (cellNum(ws.getCell(r, 5).value) ?? 0) - (cellNum(ws.getCell(r, 6).value) ?? 0);
+  return bal;
+}
+
+/* 更新結存欄的快取值,讓不重算的預覽(手機等)也顯示正確數字 */
+function refreshResults(ws) {
+  const { total } = findRows(ws);
+  let bal = cellNum(ws.getCell(8, 7).value) ?? 0;
+  for (let r = 9; r < total; r++) {
+    bal += (cellNum(ws.getCell(r, 5).value) ?? 0) - (cellNum(ws.getCell(r, 6).value) ?? 0);
+    const c = ws.getCell(r, 7);
+    if (isFormulaVal(c.value)) c.value = { ...c.value, result: bal };
+  }
+}
+
+function fillSheet(ws, summ, month, overwrite, log) {
+  const { disp, receipts, other } = summ;
+  const { months } = findRows(ws);
+  if (!months[month]) { log.push(["錯誤", `報表找不到「${MONTH_NAMES[month]}」列`]); return false; }
+  const rows = [...months[month]];
+  let changed = false;
+  for (const x of other) log.push(["注意", `${x.date} 支出原因為「${x.reason}」(非調劑),已併入調劑總量,請確認`]);
+
+  if (disp) {
+    const cell = ws.getCell(rows[0], 6), cur = cell.value;
+    if (cur != null && cur !== "" && cur !== disp && !overwrite)
+      log.push(["略過", `F${rows[0]} 已有 ${cellText(cur)},簿冊為 ${disp}(勾選「覆蓋」才會改)`]);
+    else { cell.value = disp; changed = true; }
+  }
+  receipts.forEach((x, i) => {
+    if (i >= rows.length) {
+      const nr = insertMonthRow(ws, rows[rows.length - 1], MONTH_NAMES[month]);
+      rows.push(nr);
+      log.push(["資訊", `${MONTH_NAMES[month]}進貨超過預留列數,已自動插入第 ${nr} 列`]);
+    }
+    const r = rows[i];
+    if ([3, 4, 5].some(c => { const v = ws.getCell(r, c).value; return v != null && v !== ""; }) && !overwrite) {
+      log.push(["略過", `第 ${r} 列收入欄已有資料,未覆蓋(進貨 ${x.date} ${x.inn})`]);
+      return;
+    }
+    ws.getCell(r, 3).value = x.date.replace(/\./g, "");
+    ws.getCell(r, 4).value = x.batch;
+    ws.getCell(r, 5).value = x.inn;
+    if (x.batch == null) log.push(["注意", `${x.date} 進貨 ${x.inn} 簿冊沒有批號,請手動補`]);
+    changed = true;
+  });
+  return changed;
+}
+
+function reportYear(ws) {
+  const m = /(\d{3})\s*年度/.exec(cellText(ws.getCell("A1").value));
+  return m ? +m[1] : null;
+}
+
+/* 處理一個級別:回傳每個藥品的結果與填好的 xlsx buffer */
+async function processLevel(ledger, reportBuf, year, month, overwrite) {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(reportBuf);
+  const byLic = {};
+  for (const [n, d] of Object.entries(ledger)) byLic[d.lic] = n;
+  const results = [];
+  for (const ws of wb.worksheets) {
+    const res = { sheet: ws.name, log: [] };
+    results.push(res);
+    if (CONFIG.skip.includes(ws.name)) { res.status = "skip"; continue; }
+    const code = cellText(ws.getCell("A3").value).split(/[::]/).pop().trim();
+    const lname = CONFIG.overrides[ws.name] || byLic[code.slice(-6)];
+    if (!lname || !ledger[lname]) { res.status = "nomatch"; res.code = code; continue; }
+    res.ledgerName = lname;
+    const summ = summarize(ledger[lname].rows, year, month);
+    res.disp = summ.disp; res.receipts = summ.receipts;
+    fillSheet(ws, summ, month, overwrite, res.log);
+    refreshResults(ws);
+    const { months } = findRows(ws);
+    res.repBal = months[month] ? reportBalance(ws, months[month][months[month].length - 1]) : null;
+    let ledBal = summ.lastBal;
+    if (ledBal == null) {
+      const prior = ledger[lname].rows.filter(x => (x.year * 100 + x.month) <= year * 100 + month && x.bal != null);
+      ledBal = prior.length ? prior[prior.length - 1].bal : null;
+    }
+    res.ledBal = ledBal;
+    res.status = (res.repBal != null && ledBal != null && Math.abs(res.repBal - ledBal) < 1e-9) ? "ok" : "warn";
+  }
+  wb.calcProperties = { fullCalcOnLoad: true };
+  const buffer = await wb.xlsx.writeBuffer();
+  return { results, buffer };
+}
+
+function suspiciousDates(ledger, year) {
+  const out = [];
+  for (const [n, d] of Object.entries(ledger)) {
+    const bad = d.rows.filter(x => x.year > year).map(x => x.date);
+    if (bad.length) out.push(`「${n.trim()}」:${bad.slice(0, 5).join("、")}`);
+  }
+  return out;
+}
+
+/* ═════════ 年度報表讀取(供畫面呈現整年度) ═════════ */
+function cellDisp(v) {
+  if (v == null) return "";
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  return cellText(v);
+}
+async function extractYear(buf) {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buf);
+  const sheets = []; let latest = 0, year = null;
+  for (const ws of wb.worksheets) {
+    const { total } = findRows(ws);
+    const last = total ? total - 1 : ws.rowCount;
+    const mk = r => ({
+      label: cellText(ws.getCell(r, 1).value).trim(), reg: cellDisp(ws.getCell(r, 2).value),
+      date: cellDisp(ws.getCell(r, 3).value), batch: cellDisp(ws.getCell(r, 4).value),
+      e: cellNum(ws.getCell(r, 5).value), f: cellNum(ws.getCell(r, 6).value),
+    });
+    let bal = cellNum(ws.getCell(8, 7).value) ?? 0;
+    const base = bal, rows = [], mon = Array.from({ length: 13 }, () => ({ disp: 0, rec: 0, has: false }));
+    const r8 = mk(8); r8.g = bal; rows.push(r8);
+    let sumE = r8.e || 0, sumF = 0;
+    for (let r = 9; r <= last; r++) {
+      const x = mk(r);
+      if (!x.label) continue;
+      bal += (x.e || 0) - (x.f || 0); x.g = bal; rows.push(x);
+      sumE += x.e || 0; sumF += x.f || 0;
+      const mi = MONTH_NAMES.indexOf(x.label);
+      if (mi > 0) {
+        mon[mi].disp += x.f || 0; mon[mi].rec += x.e || 0;
+        if (x.e != null || x.f != null) { mon[mi].has = true; if (mi > latest) latest = mi; }
+      }
+    }
+    const t = cellText(ws.getCell("A1").value);
+    const ym = /(\d{3})\s*年度/.exec(t); if (ym && !year) year = +ym[1];
+    const strip = (a, re) => cellText(ws.getCell(a).value).replace(re, "").trim();
+    sheets.push({
+      sheet: ws.name, name: cellText(ws.getCell("A2").value).trim(),
+      code: strip("A3", /^藥品代碼\s*[::]/), level: strip("A4", /^級別\s*[::]/),
+      company: strip("A5", /^公司\s*[::]/), base, rows, mon, sumE, sumF, end: bal,
+    });
+  }
+  return { year, latest, sheets };
+}
+
+</script>
+<script>
+/* ═════════ 介面 ═════════ */
+const LEVELS = ["三級", "四級"];
+const state = { ledger: {}, ledgerName: {}, report: {}, ydata: {}, year: null, tab: null, sel: {} };
+const $ = id => document.getElementById(id);
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === "class") e.className = v; else if (k === "style") e.style.cssText = v;
+    else if (k.startsWith("on")) e[k] = v; else e.setAttribute(k, v);
+  }
+  for (const c of kids.flat()) if (c != null) e.append(c.nodeType ? c : document.createTextNode(String(c)));
+  return e;
+}
+const fmt = n => n == null ? "" : (Math.round(n * 100) / 100).toLocaleString("en-US");
+for (let m = 1; m <= 12; m++) $("month").append(h("option", { value: m }, `${m} 月`));
+
+/* ── 瀏覽器儲存(IndexedDB) ── */
+const DB = {
+  _db: null,
+  async open() {
+    if (this._db) return this._db;
+    this._db = await new Promise((res, rej) => {
+      const q = indexedDB.open("drug-annual-report", 1);
+      q.onupgradeneeded = () => q.result.createObjectStore("kv");
+      q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error);
+    });
+    return this._db;
+  },
+  async tx(mode, fn) {
+    const db = await this.open();
+    return new Promise((res, rej) => {
+      const t = db.transaction("kv", mode), r = fn(t.objectStore("kv"));
+      t.oncomplete = () => res(r.result); t.onerror = () => rej(t.error);
+    });
+  },
+  get(k) { return this.tx("readonly", s => s.get(k)); },
+  set(k, v) { return this.tx("readwrite", s => s.put(v, k)); },
+  del(k) { return this.tx("readwrite", s => s.delete(k)); },
+};
+async function persist(lv) {
+  try { await DB.set("report-" + lv, state.report[lv]); return true; } catch (e) { console.warn(e); return false; }
+}
+const toU8 = b => b instanceof Uint8Array ? b : new Uint8Array(b);
+
+/* ── 檔案分類 ── */
+function classify(name) {
+  const lv = name.includes("三級") ? "三級" : name.includes("四級") ? "四級" : null;
+  const kind = name.includes("簿冊") ? "ledger" : name.includes("報表") ? "report" : null;
+  return lv && kind ? { lv, kind } : null;
+}
+const baseName = n => n.replace(/\.xlsx$/i, "").replace(/[((]更新至\d+月[))]/g, "").replace(/_\d+月已填/g, "");
+
+async function loadYear(lv) {
+  const r = state.report[lv];
+  state.ydata[lv] = r ? await extractYear(toU8(r.buffer)) : null;
+  if (state.ydata[lv]?.year) state.year = state.ydata[lv].year;
+}
+
+function renderSlots() {
+  const items = [];
+  for (const lv of LEVELS) {
+    const rp = state.report[lv], lf = state.ledgerName[lv];
+    items.push(h("div", { class: "slot" + (lf ? " ok" : "") },
+      h("div", { class: "t" }, (lf ? "✓ " : "○ ") + `${lv}簿冊(.xls)`), h("div", { class: "f" }, lf || "本月尚未放入")));
+    items.push(h("div", { class: "slot" + (rp ? (rp.fresh ? " ok" : " saved") : "") },
+      h("div", { class: "t" }, (rp ? (rp.fresh ? "✓ " : "💾 ") : "○ ") + `${lv}年度報表`),
+      h("div", { class: "f" }, rp ? `${rp.name}${rp.fresh ? "" : "(已儲存在此瀏覽器)"}` : "尚未載入")));
+  }
+  $("slots").replaceChildren(...items);
+  $("run").disabled = !LEVELS.some(lv => state.ledger[lv] && state.report[lv]);
+}
+
+async function handleFiles(files) {
+  const notes = [];
+  $("msg").textContent = "讀取中…";
+  for (const f of files) {
+    const c = classify(f.name);
+    if (!c) { notes.push(`無法判斷「${f.name}」是哪一個檔案(檔名需含 三級/四級 與 簿冊/報表)`); continue; }
+    try {
+      const buf = await f.arrayBuffer();
+      if (c.kind === "ledger") {
+        const led = parseLedger(XLSX.read(buf, { type: "array" }));
+        if (!Object.keys(led).length) { notes.push(`「${f.name}」讀不到簿冊資料`); continue; }
+        state.ledger[c.lv] = led; state.ledgerName[c.lv] = f.name;
+      } else {
+        state.report[c.lv] = { name: baseName(f.name), buffer: buf, fresh: true };
+        await loadYear(c.lv);
+        const ok = await persist(c.lv);
+        if (!ok) notes.push("無法儲存到瀏覽器(可能是無痕模式),仍可使用,但關閉網頁後需重新放入年度報表");
+      }
+    } catch (e) { notes.push(`讀取「${f.name}」失敗:${e.message}`); console.error(e); }
+  }
+  $("msg").textContent = notes.join(";");
+  renderSlots(); renderYear();
+  const leds = LEVELS.map(l => state.ledger[l]).filter(Boolean);
+  if (leds.length && state.year) {
+    const m = autoMonth(leds, state.year);
+    if (m) { $("month").value = m; $("monthHint").textContent = `民國 ${state.year} 年。已依簿冊最新日期自動選擇 ${m} 月,可自行更改。`; }
+  }
+}
+
+const drop = $("drop");
+drop.onclick = () => $("file").click();
+drop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") $("file").click(); };
+$("file").onchange = e => { handleFiles([...e.target.files]); e.target.value = ""; };
+drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); handleFiles([...e.dataTransfer.files]); };
+
+/* ── 年度總覽 ── */
+function renderYear() {
+  const avail = LEVELS.filter(lv => state.ydata[lv]);
+  $("tabs").replaceChildren(...LEVELS.map(lv => h("button", {
+    class: "tab" + (state.tab === lv ? " on" : ""), onclick: () => { state.tab = lv; renderYear(); },
+  }, lv + "管制藥")));
+  if (!avail.length) {
+    $("yearTitle").textContent = "📅 年度報表總覽";
+    $("yearBox").replaceChildren(h("div", { class: "empty-state" }, "尚未載入年度報表。", h("br"), "請在下方「每月匯入」放入三級、四級的", h("b", {}, "年度報表(.xlsx)"), "。"));
+    $("detail").style.display = "none"; $("latestPill").style.display = "none"; $("dlYear").style.display = "none";
+    return;
+  }
+  if (!state.tab || !state.ydata[state.tab]) state.tab = avail[0];
+  const lv = state.tab, Y = state.ydata[lv];
+  $("tabs").replaceChildren(...LEVELS.map(l => h("button", {
+    class: "tab" + (l === lv ? " on" : ""), onclick: () => { state.tab = l; renderYear(); },
+  }, l + "管制藥")));
+  $("yearTitle").textContent = `📅 民國 ${Y.year || state.year || ""} 年度報表總覽`;
+  const pill = $("latestPill"); pill.style.display = ""; pill.textContent = Y.latest ? `資料更新至 ${Y.latest} 月` : "尚無月份資料";
+
+  const dl = $("dlYear");
+  if (dl._url) URL.revokeObjectURL(dl._url);
+  dl._url = URL.createObjectURL(new Blob([toU8(state.report[lv].buffer)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  dl.href = dl._url; dl.download = `${state.report[lv].name}${Y.latest ? `(更新至${Y.latest}月)` : ""}.xlsx`;
+  dl.style.display = ""; dl.textContent = "⬇ 下載年度報表(備份)";
+
+  const sel = state.sel[lv] != null && Y.sheets[state.sel[lv]] ? state.sel[lv] : 0;
+  state.sel[lv] = sel;
+  const head = h("tr", {}, h("th", { class: "drug" }, "藥品"), h("th", { class: "n" }, "前期結存"),
+    ...Array.from({ length: 12 }, (_, i) => h("th", { class: "m" + (i + 1 === Y.latest ? " latest" : "") }, `${i + 1}月`)),
+    h("th", { class: "n" }, "年度調劑"), h("th", { class: "n" }, "年度購入"), h("th", { class: "n" }, "目前結存"));
+  const body = Y.sheets.map((s, i) => h("tr", { class: i === sel ? "sel" : "", onclick: () => { state.sel[lv] = i; renderYear(); } },
+    h("td", { class: "drug" }, h("div", { class: "nm" }, s.name), h("div", { class: "cd" }, s.code)),
+    h("td", { class: "n" }, fmt(s.base)),
+    ...Array.from({ length: 12 }, (_, k) => {
+      const m = s.mon[k + 1];
+      if (!m.has) return h("td", { class: "mc empty" }, "—");
+      return h("td", { class: "mc" }, fmt(m.disp), m.rec ? h("span", { class: "rec" }, "+" + fmt(m.rec)) : null);
+    }),
+    h("td", { class: "n tot" }, fmt(s.sumF)), h("td", { class: "n tot" }, fmt(s.sumE)), h("td", { class: "n tot" }, fmt(s.end))));
+  $("yearBox").replaceChildren(
+    h("p", { class: "hint" }, "各月格子:黑字 = 調劑總量,綠字 +N = 當月進貨量。點選藥品可在下方看整年度明細(紙本報表格式)。"),
+    h("div", { class: "tablewrap" }, h("table", { class: "matrix" }, h("thead", {}, head), h("tbody", {}, ...body))));
+  renderDetail(Y.sheets[sel], Y);
+}
+
+function renderDetail(s, Y) {
+  const box = $("detail"); box.style.display = "";
+  const act = Y.latest;
+  const rows = s.rows.map(r => h("tr", { class: r.label === MONTH_NAMES[act] ? "act" : "" },
+    h("td", {}, r.label), h("td", {}, r.reg), h("td", {}, r.date), h("td", {}, r.batch),
+    h("td", { class: "n" }, fmt(r.e)), h("td", { class: "n" }, fmt(r.f)), h("td", { class: "n" }, fmt(r.g))));
+  rows.push(h("tr", { class: "tot" }, h("td", {}, "總年度"), h("td", {}), h("td", {}), h("td", {}),
+    h("td", { class: "n" }, fmt(s.sumE)), h("td", { class: "n" }, fmt(s.sumF)), h("td", { class: "n" }, fmt(s.end))));
+  box.replaceChildren(
+    h("div", { class: "topbar noprint" }, h("strong", {}, `${s.name} 年度明細`), h("button", { class: "ghost", onclick: () => window.print() }, "🖨 列印此藥品")),
+    h("div", { class: "dhead" },
+      h("div", { class: "t1" }, `${Y.year || ""}年度`), h("div", { class: "t2" }, s.name),
+      h("div", { class: "t3" }, `藥品代碼:${s.code}　級別:${s.level}`), h("div", { class: "t3" }, `公司:${s.company}`)),
+    h("div", { class: "tablewrap" }, h("table", { class: "form" },
+      h("thead", {}, h("tr", {}, ...["月份", "登記證字號", "購入日期", "藥品批號", "購入量", "調劑總量", "結存"].map(t => h("th", {}, t)))),
+      h("tbody", {}, ...rows))));
+}
+
+/* ── 匯入 ── */
+const STATUS = {
+  ok: ["✓ 一致", "s-ok"], warn: ["⚠ 結存不一致", "s-warn"],
+  nomatch: ["✗ 找不到簿冊分頁", "s-bad"], skip: ["– 已設定略過", "s-skip"],
+};
+$("run").onclick = async () => {
+  const month = +$("month").value, overwrite = $("overwrite").checked, year = state.year;
+  $("busy").style.display = "block"; $("run").disabled = true; $("result").replaceChildren();
+  await new Promise(r => setTimeout(r, 30));
+  const out = []; let problems = 0, saveFail = false; const warnDates = [];
+  try {
+    for (const lv of LEVELS) {
+      if (!(state.ledger[lv] && state.report[lv])) continue;
+      for (const s of suspiciousDates(state.ledger[lv], year)) warnDates.push(`${lv}簿冊${s}`);
+      const { results, buffer } = await processLevel(state.ledger[lv], toU8(state.report[lv].buffer), year, month, overwrite);
+      problems += results.filter(r => r.status === "warn" || r.status === "nomatch").length;
+      state.report[lv] = { name: state.report[lv].name, buffer: toU8(buffer).slice(), fresh: false };
+      if (!(await persist(lv))) saveFail = true;
+      await loadYear(lv);
+      state.tab = lv;
+      const rows = results.map(r => {
+        const [label, cls] = STATUS[r.status];
+        const rec = (r.receipts || []).map(x => `${x.date.slice(4)} 進 ${fmt(x.inn)}${x.batch ? `(${x.batch})` : ""}`).join("、");
+        const logs = r.log.map(([t, m]) => h("div", { class: "log" }, h("span", { class: "tag " + t }, t), m));
+        return h("tr", {}, h("td", { class: cls }, label), h("td", {}, r.sheet, ...logs),
+          h("td", {}, r.ledgerName ? r.ledgerName.trim() : (r.code || "")),
+          h("td", { class: "n" }, r.disp ? fmt(r.disp) : ""), h("td", {}, rec),
+          h("td", { class: "n" }, r.status === "skip" || r.status === "nomatch" ? "" : `${fmt(r.repBal)} / ${fmt(r.ledBal)}`));
+      });
+      out.push(h("section", { class: "card" }, h("h2", {}, `${lv}管制藥 ・ ${month} 月匯入結果`),
+        h("div", { class: "tablewrap", style: "margin-top:10px" }, h("table", { style: "min-width:640px" },
+          h("thead", {}, h("tr", {}, ...["狀態", "報表分頁", "簿冊分頁"].map(t => h("th", {}, t)),
+            h("th", { class: "n" }, "調劑總量"), h("th", {}, "進貨"), h("th", { class: "n" }, "期末結存(報表/簿冊)"))),
+          h("tbody", {}, ...rows)))));
+    }
+    const banner = problems
+      ? h("div", { class: "banner warn" }, `⚠ ${month} 月已更新到年度報表,但有 ${problems} 項需要人工確認(見下方 ⚠ / ✗)`)
+      : h("div", { class: "banner ok" }, `✓ ${month} 月資料已累加到年度報表,所有藥品期末結存核對一致`);
+    const extra = [];
+    if (warnDates.length) extra.push(h("div", { class: "banner warn", style: "font-weight:400" },
+      "簿冊中有疑似打錯年份的日期(該列未計入):", h("br"), ...warnDates.flatMap(w => [w, h("br")])));
+    extra.push(h("div", { class: "banner " + (saveFail ? "warn" : "ok"), style: "font-weight:400" },
+      saveFail ? "⚠ 無法儲存到此瀏覽器,請務必按上方「下載年度報表」備份。"
+               : "💾 年度報表已儲存在此瀏覽器。建議同時按上方「⬇ 下載年度報表」留一份備份。"));
+    state.ledger = {}; state.ledgerName = {};     // 簿冊用完即清,避免下次誤用舊檔
+    $("result").replaceChildren(banner, ...extra, ...out);
+    renderSlots(); renderYear();
+    $("yearCard").scrollIntoView({ behavior: "smooth" });
+  } catch (e) {
+    $("result").replaceChildren(h("div", { class: "banner warn" }, "處理失敗:" + e.message));
+    console.error(e);
+  } finally { $("busy").style.display = "none"; renderSlots(); }
+};
+
+$("wipe").onclick = async () => {
+  if (!confirm("確定要清除此瀏覽器上已儲存的年度報表嗎?(請先確認已下載備份)")) return;
+  for (const lv of LEVELS) { try { await DB.del("report-" + lv); } catch (e) {} }
+  state.report = {}; state.ydata = {}; state.tab = null;
+  renderSlots(); renderYear();
+};
+
+/* ── 啟動:載入已儲存的年度報表 ── */
+(async () => {
+  renderSlots(); renderYear();
+  try {
+    for (const lv of LEVELS) {
+      const saved = await DB.get("report-" + lv);
+      if (saved && saved.buffer) { state.report[lv] = { ...saved, fresh: false }; await loadYear(lv); }
+    }
+  } catch (e) { console.warn("無法讀取瀏覽器儲存:", e); }
+  renderSlots(); renderYear();
+})();
+</script>
+</body>
+</html>
